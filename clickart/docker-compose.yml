@@ -13,7 +13,8 @@ services:
   mongodb:
     image: mongo:7.0
     ports:
-      - "27017:27017"
+      # Mac Port (27018) maps to Container Port (27017)
+      - "27018:27017"
 
   # 3. Keycloak (Identity & Access Management)
   keycloak:
