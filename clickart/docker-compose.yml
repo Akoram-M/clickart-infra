@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL (Relational Data)
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: orders_db
+    ports:
+      - "5432:5432"
+
+  # 2. MongoDB (Document Data)
+  mongodb:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+
+  # 3. Keycloak (Identity & Access Management)
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    command: start-dev # Runs Keycloak in development mode
+    environment:
+      KEYCLOAK_ADMIN: test
+      KEYCLOAK_ADMIN_PASSWORD: test
+    ports:
+      - "8081:8080" # Mapped to 8081 so it doesn't clash with Spring Boot on 8080
+
+  # 4. Kafka (Event Broker - using KRaft mode so Zookeeper isn't needed)
+  kafka:
+    image: bitnami/kafka:3.6
+    environment:
+      - KAFKA_ENABLE_KRAFT=yes
+      - KAFKA_CFG_PROCESS_ROLES=broker,controller
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@localhost:9093
+    ports:
+      - "9092:9092"
