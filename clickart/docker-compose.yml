@@ -8,6 +8,11 @@ services:
       POSTGRES_DB: orders_db
     ports:
       - "5432:5432"
+    volumes:
+          # This mounts your init script. Postgres runs everything in this folder on first boot.
+          - ./postgres-init:/docker-entrypoint-initdb.d
+          # Optional but recommended: Persist database data on your local machine
+          - postgres-data:/var/lib/postgresql/data
 
   # 2. MongoDB (Document Data)
   mongodb:
@@ -15,7 +20,9 @@ services:
     ports:
       # Mac Port (27018) maps to Container Port (27017)
       - "27018:27017"
-
+    volumes:
+      - mongo-data:/data/db
+      
   # 3. Keycloak (Identity & Access Management)
   keycloak:
     image: quay.io/keycloak/keycloak:23.0
@@ -42,3 +49,8 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    
+# Define Docker volumes so your data survives when you turn off the containers
+volumes:
+  postgres-data:
+  mongo-data:
