@@ -1,5 +1,5 @@
 server:
-  port: 8081 # Port 8080 is already occupied by the Product Service!
+  port: 8082 # Port 8080 is already occupied by the Product Service!
 
 spring:
   application:
