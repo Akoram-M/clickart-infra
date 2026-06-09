@@ -23,3 +23,12 @@ docker compose start
 
 7.Power OFF docker containers:
 docker compose stop
+
+
+common commands
+-------------------
+1.Find the Process ID (PID):
+lsof -i :8081
+
+2.Kill the Process
+kill -9 <PID>
