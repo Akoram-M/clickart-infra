@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: test
       POSTGRES_DB: orders_db
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
           # This mounts your init script. Postgres runs everything in this folder on first boot.
           - ./postgres-init:/docker-entrypoint-initdb.d
@@ -17,8 +17,12 @@ services:
   # 2. MongoDB (Document Data)
   mongodb:
     image: mongo:7.0
+    container_name: clickart-mongodb-1
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: test
+      MONGO_INITDB_ROOT_PASSWORD: test
+      MONGO_INITDB_DATABASE: product_db
     ports:
-      # Mac Port (27018) maps to Container Port (27017)
       - "27018:27017"
     volumes:
       - mongo-data:/data/db

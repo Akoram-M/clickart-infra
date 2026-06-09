@@ -1,0 +1,7 @@
+docker commands
+---------------
+1.open mongodb in terminal
+docker exec -it clickart-mongodb-1 mongosh -u test -p test --authenticationDatabase admin
+
+2. open postgresql database in terminal 
+docker exec -it clickart-postgres-1 psql -U test -d orders_db
