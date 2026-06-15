@@ -1,4 +1,46 @@
 services:
+  product-service:
+    image: clickart/product-service:1.0
+    container_name: clickart-product-service
+    ports:
+      - "8080:8080"
+    environment:
+      # Overrides localhost to point to the Docker DNS name of your Mongo container
+      - SPRING_DATA_MONGODB_HOST=clickart-mongodb-1 
+      - SPRING_DATA_MONGODB_PORT=27017
+    depends_on:
+      - mongodb
+
+  order-service:
+    image: clickart/order-service:1.0
+    container_name: clickart-order-service
+    ports:
+      - "8082:8082"
+    environment:
+      # Overrides localhost to point to the Docker DNS name of your Postgres container
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://clickart-postgres-1:5432/orders_db 
+    depends_on:
+      - postgres
+
+  api-gateway:
+    image: clickart/api-gateway:1.0
+    container_name: clickart-api-gateway
+    ports:
+      - "8083:8083"
+    environment:
+      # Overrides routing localhost to point to the internal container DNS names
+      - SPRING_CLOUD_GATEWAY_ROUTES[0]_ID=product-service
+      - SPRING_CLOUD_GATEWAY_ROUTES[0]_URI=http://clickart-product-service:8080
+      - SPRING_CLOUD_GATEWAY_ROUTES[0]_PREDICATES[0]=Path=/api/products/**
+      - SPRING_CLOUD_GATEWAY_ROUTES[1]_ID=order-service
+      - SPRING_CLOUD_GATEWAY_ROUTES[1]_URI=http://clickart-order-service:8082
+      - SPRING_CLOUD_GATEWAY_ROUTES[1]_PREDICATES[0]=Path=/api/orders/**
+      # Overrides Keycloak URL for internal Docker network
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://clickart-keycloak-1:8080/realms/clickart-realm
+    depends_on:
+      - keycloak
+      - product-service
+      - order-service
   # 1. PostgreSQL (Relational Data)
   postgres:
     image: postgres:15-alpine

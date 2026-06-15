@@ -1,0 +1,14 @@
+# Use a lightweight, secure Linux jammy image with Java 17 pre-installed
+FROM eclipse-temurin:17-jre-jammy
+
+# Set the working directory inside the Linux container
+WORKDIR /app
+
+# Copy the JAR file you just compiled from your Mac into the Linux container
+COPY target/*.jar app.jar
+
+# Document that this container processes traffic on port 8080
+EXPOSE 8080
+
+# The exact command Linux will run when the container boots
+ENTRYPOINT ["java", "-jar", "app.jar"]
