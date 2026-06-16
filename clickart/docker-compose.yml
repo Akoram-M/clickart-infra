@@ -35,8 +35,10 @@ services:
       - SPRING_CLOUD_GATEWAY_ROUTES[1]_ID=order-service
       - SPRING_CLOUD_GATEWAY_ROUTES[1]_URI=http://clickart-order-service:8082
       - SPRING_CLOUD_GATEWAY_ROUTES[1]_PREDICATES[0]=Path=/api/orders/**
-      # Overrides Keycloak URL for internal Docker network
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://clickart-keycloak-1:8080/realms/clickart-realm
+      # 1. The Validation String (Matches what Postman and the Mac host see)
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://localhost:8081/realms/clickart-realm
+      # 2. The Internal Network Path (Where the Gateway physically downloads the keys from Keycloak)
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://clickart-keycloak-1:8080/realms/clickart-realm/protocol/openid-connect/certs
     depends_on:
       - keycloak
       - product-service

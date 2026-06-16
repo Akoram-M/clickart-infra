@@ -21,6 +21,27 @@ docker compose start
 7.Power OFF docker containers:
 docker compose stop
 
+8.Reboot the network
+docker compose up -d --force-recreate
+
+9.see logs based on the service or container 
+docker logs -f clickart-api-gateway
+docker logs -f clickart-product-service
+docker logs -f clickart-order-service
+
+10.restart single service or container
+docker compose restart api-gateway
+
+11.build docekr iamges
+docker build -t clickart/product-service:1.0 .
+
+docker build -t clickart/api-gateway:1.0 .
+
+docker build -t clickart/order-service:1.0 .
+
+12, targeted deploy
+docker compose up -d --no-deps api-gateway
+
 
 common commands
 -------------------
@@ -30,14 +51,5 @@ lsof -i :8081
 2.Kill the Process
 kill -9 <PID>
 
-3. build product-service image
-docker build -t clickart/product-service:1.0 .
-
-4.build apigateway
-docker build -t clickart/api-gateway:1.0 .
-
-5.build orderservice
-docker build -t clickart/order-service:1.0 .
-
-6.compile services
+3.compile services
 mvn clean package -DskipTests
