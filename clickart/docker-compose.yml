@@ -11,6 +11,16 @@ services:
     depends_on:
       - mongodb
 
+  inventory-service:
+    image: clickart/inventory-service:1.0
+    container_name: clickart-inventory-service
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://clickart-postgres-1:5432/inventory_db
+    depends_on:
+      - postgres
+    
   order-service:
     image: clickart/order-service:1.0
     container_name: clickart-order-service

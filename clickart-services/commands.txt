@@ -6,6 +6,9 @@ docker exec -it clickart-mongodb-1 mongosh -u test -p test --authenticationDatab
 2. open postgresql database in terminal 
 docker exec -it clickart-postgres-1 psql -U test -d orders_db
 
+open postgresql inventory database in terminal
+docker exec -it clickart-postgres-1 psql -U test -d inventory_db
+
 3.Destroy the containers and their attached volumes:
 docker compose down -v
 
@@ -28,6 +31,7 @@ docker compose up -d --force-recreate
 docker logs -f clickart-api-gateway
 docker logs -f clickart-product-service
 docker logs -f clickart-order-service
+docker logs -f clickart-inventory-service
 
 10.restart single service or container
 docker compose restart api-gateway
