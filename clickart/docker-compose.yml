@@ -27,10 +27,12 @@ services:
     ports:
       - "8082:8082"
     environment:
-      # Overrides localhost to point to the Docker DNS name of your Postgres container
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://clickart-postgres-1:5432/orders_db 
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://clickart-postgres-1:5432/orders_db
+      # Force the container to use the internal Docker network to find Kafka
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=clickart-kafka-1:29092 
     depends_on:
       - postgres
+      - kafka # Add this dependency so Kafka boots first
 
   api-gateway:
     image: clickart/api-gateway:1.0
@@ -94,19 +96,21 @@ services:
 # 4. Kafka (Official Apache Kafka - KRaft mode)
   kafka:
     image: apache/kafka:3.7.0
+    container_name: clickart-kafka-1
     ports:
-      - "9092:9092"
+      - "9092:9092" # External Mac port
+      - "29092:29092" # Internal Docker port
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,DOCKER_INTERNAL://0.0.0.0:29092
+      # This is the critical line. It tells Kafka how to route traffic based on where it came from.
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,DOCKER_INTERNAL://clickart-kafka-1:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,DOCKER_INTERNAL:PLAINTEXT
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
     
 # Define Docker volumes so your data survives when you turn off the containers
 volumes:

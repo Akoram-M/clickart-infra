@@ -1,0 +1,15 @@
+server:
+  port: 8085 # Isolated port
+
+spring:
+  application:
+    name: notification-service
+  kafka:
+    # Points to your Kafka Docker container
+    bootstrap-servers: localhost:9092 
+    consumer:
+      # Kafka requires consumers to belong to a group to track which messages they have read
+      group-id: notificationId
+      # How to deserialize the raw bytes coming over the network back into Java Strings
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer

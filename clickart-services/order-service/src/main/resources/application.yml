@@ -13,3 +13,9 @@ spring:
     hibernate:
       ddl-auto: update # Automatically maps Java classes into SQL tables
     show-sql: true # Prints exactly what SQL Spring Data is writing to the console
+    
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer

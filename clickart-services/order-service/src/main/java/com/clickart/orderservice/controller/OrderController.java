@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -20,6 +21,7 @@ public class OrderController<inventoryClient> {
 
     private final OrderRepository orderRepository;
     private final InventoryClient inventoryClient;
+    private final KafkaTemplate<String, String> kafkaTemplate;
 
     @PostMapping("/placeOrders")
     @ResponseStatus(HttpStatus.CREATED)
@@ -36,8 +38,12 @@ public class OrderController<inventoryClient> {
 
         order.setOrderNumber(UUID.randomUUID().toString());
         order.setStatus("CONFIRMED"); // Stock exists, transaction approved
-        
         orderRepository.save(order);
+
+        log.info("Kakfa notification sent");
+        // Fire the asynchronous event to the notificationTopic
+        kafkaTemplate.send("notificationTopic", order.getOrderNumber());
+
         log.info("OrderController : placeOrder : end");
         return "Order Placed Successfully";
     }
