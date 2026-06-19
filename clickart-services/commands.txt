@@ -57,3 +57,13 @@ kill -9 <PID>
 
 3.compile services
 mvn clean package -DskipTests
+
+
+UI commands
+++++++++++++++
+1.create next project 
+npx create-next-app@latest clickart-ui
+
+2. Install required dependencies
+npm install next-auth @tanstack/react-query axios
+

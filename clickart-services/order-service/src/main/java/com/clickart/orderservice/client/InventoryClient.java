@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 // This tells the Order Service exactly how to call the Inventory Service
 // We use the Docker DNS name (clickart-inventory-service) 
-@FeignClient(name = "inventory-service", url = "${inventory.service.url}")
+@FeignClient(name = "inventory-service")
 public interface InventoryClient {
 
     @GetMapping("/api/inventory/{skuCode}")
