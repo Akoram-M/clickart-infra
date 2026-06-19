@@ -1,4 +1,4 @@
-package com.clickkart.inventoryservice;
+package com.clickart.inventoryservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
