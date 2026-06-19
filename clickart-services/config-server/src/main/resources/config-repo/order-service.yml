@@ -1,0 +1,18 @@
+# config-server/src/main/resources/config-repo/order-service.yml
+server:
+  port: 8082
+
+spring:
+  datasource:
+    url: jdbc:postgresql://clickart-postgres-1:5432/orders_db
+    username: test
+    password: test
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+  kafka:
+    bootstrap-servers: clickart-kafka-1:29092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer

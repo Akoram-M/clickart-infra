@@ -1,16 +1,5 @@
-server:
-  port: 8084 # Port mapping must not collide with other services
-
 spring:
   application:
     name: inventory-service
-  datasource:
-    # Notice we are using 5434 to hit the Docker container from your Mac host during development
-    url: jdbc:postgresql://localhost:5434/inventory_db
-    username: test
-    password: test
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
+  config:
+    import: "configserver:http://localhost:8888"

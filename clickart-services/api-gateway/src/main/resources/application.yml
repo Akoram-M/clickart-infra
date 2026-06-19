@@ -1,27 +1,5 @@
-server:
-  port: 8083 # The single front door for your entire architecture
-
 spring:
   application:
     name: api-gateway
-  cloud:
-    gateway:
-      routes:
-        # Route 1: Directs product traffic to the Product Microservice
-        - id: product-service
-          uri: http://localhost:8080
-          predicates:
-            - Path=/api/products/**
-
-        # Route 2: Directs order traffic to the Order Microservice
-        - id: order-service
-          uri: http://localhost:8082
-          predicates:
-            - Path=/api/orders/**
-            
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          # Points to your running Keycloak Docker instance to fetch token validation keys
-          issuer-uri: http://localhost:8081/realms/clickart-realm
+  config:
+    import: "configserver:http://localhost:8888"

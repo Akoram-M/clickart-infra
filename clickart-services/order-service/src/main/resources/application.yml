@@ -1,21 +1,5 @@
-server:
-  port: 8082 # Port 8080 is already occupied by the Product Service!
-
 spring:
   application:
     name: order-service
-  datasource:
-    url: jdbc:postgresql://localhost:5434/orders_db
-    username: test
-    password: test
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update # Automatically maps Java classes into SQL tables
-    show-sql: true # Prints exactly what SQL Spring Data is writing to the console
-    
-  kafka:
-    bootstrap-servers: localhost:9092
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+  config:
+    import: "configserver:http://localhost:8888"
