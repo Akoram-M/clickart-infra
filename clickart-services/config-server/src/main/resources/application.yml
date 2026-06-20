@@ -4,12 +4,10 @@ server:
 spring:
   application:
     name: config-server
-  # Change this to 'git' to use GitHub, or 'native' to use your local folder
   profiles:
-    active: git 
+    active: native # Default to local folder when running from IDE
 
 ---
-# This block is only active when profile is 'native' (Development Mode)
 spring:
   config:
     activate:
@@ -18,20 +16,11 @@ spring:
     config:
       server:
         native:
-          # Point this exactly to where you cloned the repo on your Mac
-          search-locations: file:///Users/akorammohandoss/path/to/your/clickart-config-repo
+          search-locations: /Users/akorammohandoss/workspace/backend/Clickart/clickart-config-repository
 
 ---
-# This block is only active when profile is 'git' (Production Mode)
 spring:
   config:
     activate:
-      on-profile: git
-  cloud:
-    config:
-      server:
-        git:
-          uri: https://github.com/Akoram-M/clickart-config-repository.git
-          default-label: main
-          username: Akoram-M
-          password: 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
+      on-profile: docker
+  # No git properties needed here. Docker Compose injects them automatically at runtime.

@@ -1,63 +1,12 @@
+version: '3.8'
+
 services:
-  product-service:
-    image: clickart/product-service:1.0
-    container_name: clickart-product-service
-    ports:
-      - "8080:8080"
-    environment:
-      # Overrides localhost to point to the Docker DNS name of your Mongo container
-      - SPRING_DATA_MONGODB_HOST=clickart-mongodb-1 
-      - SPRING_DATA_MONGODB_PORT=27017
-    depends_on:
-      - mongodb
-
-  inventory-service:
-    image: clickart/inventory-service:1.0
-    container_name: clickart-inventory-service
-    ports:
-      - "8084:8084"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://clickart-postgres-1:5432/inventory_db
-    depends_on:
-      - postgres
-    
-  order-service:
-    image: clickart/order-service:1.0
-    container_name: clickart-order-service
-    ports:
-      - "8082:8082"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://clickart-postgres-1:5432/orders_db
-      # Force the container to use the internal Docker network to find Kafka
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=clickart-kafka-1:29092 
-    depends_on:
-      - postgres
-      - kafka # Add this dependency so Kafka boots first
-
-  api-gateway:
-    image: clickart/api-gateway:1.0
-    container_name: clickart-api-gateway
-    ports:
-      - "8083:8083"
-    environment:
-      # Overrides routing localhost to point to the internal container DNS names
-      - SPRING_CLOUD_GATEWAY_ROUTES[0]_ID=product-service
-      - SPRING_CLOUD_GATEWAY_ROUTES[0]_URI=http://clickart-product-service:8080
-      - SPRING_CLOUD_GATEWAY_ROUTES[0]_PREDICATES[0]=Path=/api/products/**
-      - SPRING_CLOUD_GATEWAY_ROUTES[1]_ID=order-service
-      - SPRING_CLOUD_GATEWAY_ROUTES[1]_URI=http://clickart-order-service:8082
-      - SPRING_CLOUD_GATEWAY_ROUTES[1]_PREDICATES[0]=Path=/api/orders/**
-      # 1. The Validation String (Matches what Postman and the Mac host see)
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://localhost:8081/realms/clickart-realm
-      # 2. The Internal Network Path (Where the Gateway physically downloads the keys from Keycloak)
-      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://clickart-keycloak-1:8080/realms/clickart-realm/protocol/openid-connect/certs
-    depends_on:
-      - keycloak
-      - product-service
-      - order-service
-  # 1. PostgreSQL (Relational Data)
+  # ==========================================
+  # PHASE 1: CORE INFRASTRUCTURE
+  # ==========================================
   postgres:
     image: postgres:15-alpine
+    container_name: clickart-postgres-1
     environment:
       POSTGRES_USER: test
       POSTGRES_PASSWORD: test
@@ -65,12 +14,8 @@ services:
     ports:
       - "5434:5432"
     volumes:
-          # This mounts your init script. Postgres runs everything in this folder on first boot.
-          - ./postgres-init:/docker-entrypoint-initdb.d
-          # Optional but recommended: Persist database data on your local machine
-          - postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data
 
-  # 2. MongoDB (Document Data)
   mongodb:
     image: mongo:7.0
     container_name: clickart-mongodb-1
@@ -82,37 +27,150 @@ services:
       - "27018:27017"
     volumes:
       - mongo-data:/data/db
-      
-  # 3. Keycloak (Identity & Access Management)
+
   keycloak:
     image: quay.io/keycloak/keycloak:23.0
-    command: start-dev # Runs Keycloak in development mode
+    container_name: clickart-keycloak-1
+    command: start-dev
     environment:
       KEYCLOAK_ADMIN: test
       KEYCLOAK_ADMIN_PASSWORD: test
     ports:
-      - "8081:8080" # Mapped to 8081 so it doesn't clash with Spring Boot on 8080
+      - "8081:8080"
 
-# 4. Kafka (Official Apache Kafka - KRaft mode)
   kafka:
     image: apache/kafka:3.7.0
     container_name: clickart-kafka-1
     ports:
-      - "9092:9092" # External Mac port
-      - "29092:29092" # Internal Docker port
+      - "9092:9092"
+      - "29092:29092"
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,DOCKER_INTERNAL://0.0.0.0:29092
-      # This is the critical line. It tells Kafka how to route traffic based on where it came from.
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,DOCKER_INTERNAL://clickart-kafka-1:29092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,DOCKER_INTERNAL:PLAINTEXT
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+  # ==========================================
+  # PHASE 2: CONFIGURATION & DISCOVERY
+  # ==========================================
+  config-server:
+    image: clickart/config-server:1.0
+    container_name: clickart-config-server
+    ports:
+      - "8888:8888"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      # CRITICAL: Replace YOUR_GITHUB_USERNAME below!
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=https://github.com/Akoram-M/clickart-config-repository.git
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_USERNAME=Akoram-M
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_PASSWORD=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
+      # CRITICAL: Forces Config Server to check 'main' instead of 'master'
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL=main
+    restart: on-failure
+
+  discovery-server:
+    image: clickart/discovery-server:1.0
+    container_name: clickart-discovery-server
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - CONFIG_SERVER_URL=http://clickart-config-server:8888
+    depends_on:
+      - config-server
+    restart: on-failure
+
+  # ==========================================
+  # PHASE 3: DOMAIN MICROSERVICES
+  # ==========================================
+  product-service:
+    image: clickart/product-service:1.0
+    container_name: clickart-product-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - CONFIG_SERVER_URL=http://clickart-config-server:8888
+      - SPRING_DATA_MONGODB_URI=mongodb://test:test@clickart-mongodb-1:27017/product_db?authSource=admin
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://clickart-discovery-server:8761/eureka/
+    depends_on:
+      - mongodb
+      - config-server
+      - discovery-server
+    restart: on-failure
+
+  inventory-service:
+    image: clickart/inventory-service:1.0
+    container_name: clickart-inventory-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - CONFIG_SERVER_URL=http://clickart-config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://clickart-postgres-1:5432/inventory_db
+      - SPRING_DATASOURCE_USERNAME=test
+      - SPRING_DATASOURCE_PASSWORD=test
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://clickart-discovery-server:8761/eureka/
+    depends_on:
+      - postgres
+      - config-server
+      - discovery-server
+    restart: on-failure
     
-# Define Docker volumes so your data survives when you turn off the containers
+  order-service:
+    image: clickart/order-service:1.0
+    container_name: clickart-order-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - CONFIG_SERVER_URL=http://clickart-config-server:8888
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://clickart-postgres-1:5432/orders_db
+      - SPRING_DATASOURCE_USERNAME=test
+      - SPRING_DATASOURCE_PASSWORD=test
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=clickart-kafka-1:9092
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://clickart-discovery-server:8761/eureka/
+    depends_on:
+      - postgres
+      - kafka
+      - config-server
+      - discovery-server
+    restart: on-failure
+
+  notification-service:
+    image: clickart/notification-service:1.0
+    container_name: clickart-notification-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - CONFIG_SERVER_URL=http://clickart-config-server:8888
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=clickart-kafka-1:9092
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://clickart-discovery-server:8761/eureka/
+    depends_on:
+      - kafka
+      - config-server
+      - discovery-server
+    restart: on-failure
+
+  # ==========================================
+  # PHASE 4: THE EDGE (API GATEWAY)
+  # ==========================================
+  api-gateway:
+    image: clickart/api-gateway:1.0
+    container_name: clickart-api-gateway
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - CONFIG_SERVER_URL=http://clickart-config-server:8888
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://clickart-discovery-server:8761/eureka/
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://clickart-keycloak-1:8080/realms/clickart-realm/protocol/openid-connect/certs
+    depends_on:
+      - keycloak
+      - config-server
+      - discovery-server
+      - product-service
+      - order-service
+      - inventory-service
+    restart: on-failure
+
 volumes:
   postgres-data:
   mongo-data:

@@ -79,3 +79,54 @@ npx create-next-app@latest clickart-ui
 2. Install required dependencies
 npm install next-auth @tanstack/react-query axios
 
+Build repos 
++++++++++++
+Phase 1: The Compilation Pipeline (Host Machine)
+
+cd /Users/akorammohandoss/workspace/backend/Clickart/clickart-bom
+mvn clean install
+
+2. Compile the Microservices
+
+cd /Users/akorammohandoss/workspace/backend/Clickart/clickart-services
+
+cd config-server && mvn clean package -DskipTests && cd ..
+cd discovery-server && mvn clean package -DskipTests && cd ..
+cd product-service && mvn clean package -DskipTests && cd ..
+cd inventory-service && mvn clean package -DskipTests && cd ..
+cd order-service && mvn clean package -DskipTests && cd ..
+cd notification-service && mvn clean package -DskipTests && cd ..
+cd api-gateway && mvn clean package -DskipTests && cd ..
+
+Phase 2: The Containerization Pipeline (Docker Daemon)
+
+cd /Users/akorammohandoss/workspace/backend/Clickart/clickart-services
+
+cd config-server && docker build -t clickart/config-server:1.0 . && cd ..
+cd discovery-server && docker build -t clickart/discovery-server:1.0 . && cd ..
+cd product-service && docker build -t clickart/product-service:1.0 . && cd ..
+cd inventory-service && docker build -t clickart/inventory-service:1.0 . && cd ..
+cd order-service && docker build -t clickart/order-service:1.0 . && cd ..
+cd notification-service && docker build -t clickart/notification-service:1.0 . && cd ..
+cd api-gateway && docker build -t clickart/api-gateway:1.0 . && cd ..
+
+Phase 3: The Orchestration Pipeline (Docker Compose)
+
+1. Clean the Slate
+
+cd /Users/akorammohandoss/workspace/backend/Clickart/clickart
+docker compose down -v
+(The -v flag aggressively deletes the old database volumes. We want a perfectly clean state).
+
+3. Boot the Fleet
+
+docker compose up -d
+
+Phase 4: The Verification Protocol
+
+1. Tail the Edge Server
+docker logs -f clickart-api-gateway
+
+
+docker exec clickart-postgres-1 psql -U test -d orders_db -c "CREATE DATABASE inventory_db;"
+docker exec clickart-postgres-1 psql -U test -d orders_db -c "CREATE DATABASE keycloak_db;"
