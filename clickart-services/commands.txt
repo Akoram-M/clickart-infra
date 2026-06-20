@@ -26,6 +26,7 @@ docker compose stop
 
 8.Reboot the network
 docker compose up -d --force-recreate
+docker compose up -d --force-recreate notification-service
 
 9.see logs based on the service or container 
 docker logs -f clickart-api-gateway
@@ -54,6 +55,9 @@ docker build -t clickart/inventory-service:1.0 .
 
 # In order-service directory:
 docker build -t clickart/order-service:1.0 .
+
+# In notification-service directory:
+docker build -t clickart/notification-service:1.0 .
 
 12, targeted deploy
 docker compose up -d --no-deps api-gateway
@@ -119,7 +123,7 @@ docker compose down -v
 (The -v flag aggressively deletes the old database volumes. We want a perfectly clean state).
 
 3. Boot the Fleet
-
+cd /Users/akorammohandoss/workspace/backend/Clickart/clickart
 docker compose up -d
 
 Phase 4: The Verification Protocol
@@ -127,6 +131,6 @@ Phase 4: The Verification Protocol
 1. Tail the Edge Server
 docker logs -f clickart-api-gateway
 
-
+inject query
 docker exec clickart-postgres-1 psql -U test -d orders_db -c "CREATE DATABASE inventory_db;"
 docker exec clickart-postgres-1 psql -U test -d orders_db -c "CREATE DATABASE keycloak_db;"

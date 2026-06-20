@@ -12,6 +12,7 @@ public class NotificationListener {
     @KafkaListener(topics = "notificationTopic")
     public void handleNotification(String orderNumber) {
         // In a real app, this triggers AWS SES or SendGrid. Here, we log it.
+        log.info("*************************************************************************");
         log.info("Received Notification for Order - Sending Email for Order Number: {}", orderNumber);
     }
 }

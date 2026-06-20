@@ -110,6 +110,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://clickart-postgres-1:5432/inventory_db
       - SPRING_DATASOURCE_USERNAME=test
       - SPRING_DATASOURCE_PASSWORD=test
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=clickart-kafka-1:29092
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://clickart-discovery-server:8761/eureka/
     depends_on:
       - postgres
@@ -126,7 +127,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://clickart-postgres-1:5432/orders_db
       - SPRING_DATASOURCE_USERNAME=test
       - SPRING_DATASOURCE_PASSWORD=test
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=clickart-kafka-1:9092
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=clickart-kafka-1:29092
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://clickart-discovery-server:8761/eureka/
     depends_on:
       - postgres
@@ -141,7 +142,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - CONFIG_SERVER_URL=http://clickart-config-server:8888
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=clickart-kafka-1:9092
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=clickart-kafka-1:29092
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://clickart-discovery-server:8761/eureka/
     depends_on:
       - kafka
