@@ -1,4 +1,4 @@
-package com.clikart.configserver;
+package com.clickart.configserver;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

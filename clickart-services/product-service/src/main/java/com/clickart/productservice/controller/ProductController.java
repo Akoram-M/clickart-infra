@@ -18,13 +18,13 @@ public class ProductController {
 
     private final ProductRepository productRepository;
 
-    @PostMapping("/addProducts")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public void createProduct(@RequestBody List<Product> products) {
         productRepository.saveAll(products);
     }
 
-    @GetMapping("/getAllProducts")
+    @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public List<Product> getAllProducts() {
                 log.info("productController :: getAllProducts() ");
