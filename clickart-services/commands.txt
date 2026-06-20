@@ -37,10 +37,22 @@ docker logs -f clickart-inventory-service
 docker compose restart api-gateway
 
 11.build docekr iamges
-docker build -t clickart/product-service:1.0 .
+# In config-server directory:
+docker build -t clickart/config-server:1.0 .
 
+# In discovery-server directory:
+docker build -t clickart/discovery-server:1.0 .
+
+# In api-gateway directory:
 docker build -t clickart/api-gateway:1.0 .
 
+# In product-service directory:
+docker build -t clickart/product-service:1.0 .
+
+# In inventory-service directory:
+docker build -t clickart/inventory-service:1.0 .
+
+# In order-service directory:
 docker build -t clickart/order-service:1.0 .
 
 12, targeted deploy
