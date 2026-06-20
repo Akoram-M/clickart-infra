@@ -1,6 +1,0 @@
-Script started on Sat Jun 20 11:09:07 2026
-Command: executing but still in a same page so remove that login if i set build and deploy true just give me the comamdn to build repos mentioned reponame and its build link i will copy it and paste in manualy to the terminal give the run command to redirect ot eh service path than run mvn commadn it should build and after that no delay logic just remove it simplty if all build got success give me the commadn to i just simply copy it and i will open terminal maually and create tab inside that and paste commadns one by one and run it thats ok for me give me the comamdn to ui as well
-script: executing: No such file or directory
-
-Command exit status: 1
-Script done on Sat Jun 20 11:09:07 2026

@@ -1,0 +1,11 @@
+# Fetches a minimal Ubuntu Linux image pre-loaded with only the Java 17 Runtime Environment (JRE), saving space by excluding the JDK.
+FROM eclipse-temurin:17-jre-jammy
+
+# Creates a directory named 'app' inside the isolated Linux container and makes it the active execution context for all following commands.
+WORKDIR /app
+
+# Grabs the compiled Java binary from your Mac's local 'target' folder and pastes it into the container's '/app' folder, renaming it to 'app.jar' so the boot command is always the same.
+COPY target/*.jar app.jar
+
+# The absolute, unchangeable command Docker executes when the container boots; it runs Java, forces Spring to read the 'docker' profile from your config repo, and executes the jar.
+ENTRYPOINT ["java", "-Dspring.profiles.active=docker", "-jar", "app.jar"]
