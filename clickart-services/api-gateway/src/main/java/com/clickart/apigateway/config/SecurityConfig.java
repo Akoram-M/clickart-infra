@@ -19,19 +19,13 @@ import java.util.List;
 public class SecurityConfig {
 
     @Bean
-    public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity serverHttpSecurity) {
-        serverHttpSecurity
-                .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                // 1. Explicitly wire the Java-based CORS configuration source
-                .cors(corsSpec -> corsSpec.configurationSource(corsConfigurationSource()))
-                .authorizeExchange(exchange -> exchange
-                        // 2. Allow all OPTIONS preflight requests
-                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .anyExchange().authenticated()
-                )
+    public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
+        http.csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .authorizeExchange(exchanges -> exchanges
+                        .pathMatchers("/eureka/**", "/actuator/**").permitAll()
+                        .anyExchange().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
-
-        return serverHttpSecurity.build();
+        return http.build();
     }
 
     // 3. Define the exact CORS policy in Java memory

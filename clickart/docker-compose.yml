@@ -171,7 +171,29 @@ services:
       - order-service
       - inventory-service
     restart: on-failure
+# ==========================================
+  # PHASE 5: THE OBSERVABILITY MATRIX
+  # ==========================================
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: clickart-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - api-gateway
 
+  grafana:
+    image: grafana/grafana:10.0.3
+    container_name: clickart-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
 volumes:
   postgres-data:
   mongo-data:
