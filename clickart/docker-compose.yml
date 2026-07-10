@@ -194,6 +194,11 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
       - prometheus
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: clickart-zipkin
+    ports:
+      - "9411:9411"
 volumes:
   postgres-data:
   mongo-data:
