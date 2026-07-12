@@ -199,6 +199,25 @@ services:
     container_name: clickart-zipkin
     ports:
       - "9411:9411"
+  # ==========================================
+  # PHASE 6: CENTRALIZED LOGGING
+  # ==========================================
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: clickart-loki
+    ports:
+      - "3100:3100"
+
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: clickart-promtail
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/config.yml
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
 volumes:
   postgres-data:
   mongo-data:
