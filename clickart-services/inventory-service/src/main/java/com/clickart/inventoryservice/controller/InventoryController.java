@@ -10,6 +10,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+
 @RestController
 @RequestMapping("/api/inventory")
 @RequiredArgsConstructor
@@ -38,4 +39,13 @@ public class InventoryController {
         log.info("InventoryController :: getListOfInventory -->");
         return inventoryRepository.findAll();
     }
+
+    @PostMapping("updateInventory")
+    public Inventory updateInventory(@RequestBody Inventory request) {
+        log.info("InventoryController :: updateInventory <--");
+        Inventory res = inventoryRepository.save(request);
+        log.info("InventoryController :: updateInventory -->");
+        return res != null ? res : null;
+    }
+    
 }
