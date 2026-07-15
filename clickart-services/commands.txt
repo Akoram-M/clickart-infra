@@ -147,3 +147,9 @@ Navigate to Grafana at http://localhost:3000 (Login: admin/admin).
 Add a Data Source -> Select Prometheus -> URL: http://clickart-prometheus:9090 -> Save & Test.
 
 Go to Dashboards -> Import -> Enter ID 4701 (JVM Micrometer Dashboard) -> Select your Prometheus data source -> Load.
+
+
+##########
+Redis
+*********
+1.docker exec -it clickart-redis-1 redis-cli
