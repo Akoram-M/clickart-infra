@@ -2,6 +2,8 @@ package com.clickart.inventoryservice.controller;
 
 import com.clickart.inventoryservice.model.Inventory;
 import com.clickart.inventoryservice.repository.InventoryRepository;
+import com.clickart.inventoryservice.service.InventoryService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -10,42 +12,37 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-
 @RestController
 @RequestMapping("/api/inventory")
 @RequiredArgsConstructor
 @Slf4j
 public class InventoryController {
-
-    private final InventoryRepository inventoryRepository;
+    private final InventoryService inventoryService;
 
     @GetMapping("/{skuCode}")
     @ResponseStatus(HttpStatus.OK)
     public boolean isInStock(@PathVariable String skuCode) {
         log.info("InventoryController :: isInStock <--");
-        if (skuCode.equals("POISON_PILL")) {
-            log.error("Intentional crash triggered for SKU: {}", skuCode);
-            throw new RuntimeException("FATAL: Simulated Database Connection Dropped!");
-        }
+        log.error("Intentional crash triggered for SKU: {}", skuCode);
+
         log.info("InventoryController :: isInStock -->");
-        return inventoryRepository.findBySkuCode(skuCode)
-                .map(inventory -> inventory.getQuantity() > 0)
-                .orElse(false);
+        return inventoryService.checkProductIsInStock(skuCode);
     }
 
     @GetMapping
     public List<Inventory> getListOfInventory() {
         log.info("InventoryController :: getListOfInventory <--");
         log.info("InventoryController :: getListOfInventory -->");
-        return inventoryRepository.findAll();
+        return inventoryService.getInventoryList();
     }
 
     @PostMapping("updateInventory")
-    public Inventory updateInventory(@RequestBody Inventory request) {
+    public boolean updateInventory(@RequestBody List<Inventory> request) {
         log.info("InventoryController :: updateInventory <--");
-        Inventory res = inventoryRepository.save(request);
+        // List<Inventory> res = inventoryRepository.saveAll(request);
         log.info("InventoryController :: updateInventory -->");
-        return res != null ? res : null;
+        // return res != null ? true : false;
+        return inventoryService.updateInventoryStocks(request);
     }
-    
+
 }

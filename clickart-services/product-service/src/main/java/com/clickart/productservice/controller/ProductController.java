@@ -7,10 +7,14 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/products")
@@ -19,6 +23,7 @@ import java.util.List;
 public class ProductController {
 
     private final ProductRepository productRepository;
+    private final StringRedisTemplate stringRedisTemplate;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -33,5 +38,19 @@ public class ProductController {
     public List<Product> getAllProducts() {
         log.info("productController :: getAllProducts() ");
         return productRepository.findAll();
+    }
+
+    @GetMapping("/trending")
+    @ResponseStatus(HttpStatus.OK)
+    public List<Product> getTrendingProducts() {
+        // 1. Fetch Top 10 SKUs from Redis ZSET (index 0 to 9)
+        Set<String> topSkus = stringRedisTemplate.opsForZSet().reverseRange("trending_products", 0, 9);
+
+        if (topSkus == null || topSkus.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 2. Fetch full metadata from MongoDB
+        return productRepository.findBySkuCodeIn(new ArrayList<>(topSkus));
     }
 }

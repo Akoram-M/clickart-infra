@@ -58,6 +58,8 @@ services:
     container_name: clickart-redis-1
     ports:
       - "6379:6379"
+    volumes:
+      - redis_data:/data #
   # ==========================================
   # PHASE 2: CONFIGURATION & DISCOVERY
   # ==========================================
@@ -225,3 +227,4 @@ services:
 volumes:
   postgres-data:
   mongo-data:
+  redis_data:

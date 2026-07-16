@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 public class Product {
     @Id
     private String id; // Mongo IDs are Strings, not Longs
+    private String skuCode;
     private String name;
     private String description;
     private BigDecimal price; // Always use BigDecimal for money, never double
