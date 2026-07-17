@@ -8,7 +8,6 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.clickart.orderservice.client.InventoryClient;
 import com.clickart.orderservice.dto.OrderPlacedEvent;
 import com.clickart.orderservice.model.Order;
 import com.clickart.orderservice.model.OrderLineItem;
@@ -26,7 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final InventoryClient inventoryClient;
     private final OutboxRepository outboxRepository;
 
     private final ObjectMapper objectMapper;
@@ -36,7 +34,7 @@ public class OrderService {
         log.info("OrderService : placeOrder : <-->");
         // 1. Prepare the Order
         order.setOrderNumber(UUID.randomUUID().toString());
-        order.setStatus("CONFIRMED");
+        order.setStatus("PENDING");
 
         // 2. Save the Order to Postgres
         orderRepository.save(order);
@@ -47,16 +45,6 @@ public class OrderService {
                 .collect(Collectors.toMap(
                         OrderLineItem::getSkuCode,
                         OrderLineItem::getQuantity));
-
-        // Loop through all items in the payload and query the Inventory container over
-        // HTTP
-        for (OrderLineItem item : order.getOrderLineItems()) {
-            boolean inStock = inventoryClient.isInStock(item.getSkuCode());
-            if (!inStock) {
-                // If the Inventory Service returns false, abort the transaction immediately
-                throw new IllegalArgumentException("Product is not in stock: " + item.getSkuCode());
-            }
-        }
 
         // 4. Create and Save the Outbox Event (NO KAFKA CALLS HERE)
         try {
@@ -72,7 +60,7 @@ public class OrderService {
                     .build();
 
             outboxRepository.save(outboxEvent);
-            log.info("Outbox Event Saved for Order: {}", order.getOrderNumber());
+            log.info("Outbox Event Saved for PENDING Order: {}", order.getOrderNumber());
 
         } catch (Exception e) {
             // If serialization fails, the entire transaction rolls back. Order is NOT
@@ -81,7 +69,7 @@ public class OrderService {
         }
 
         log.info("OrderService : placeOrder : -->");
-        return "Order Placed Successfully";
+        return "Order Placed and is currently PENDING";
     }
 
 }

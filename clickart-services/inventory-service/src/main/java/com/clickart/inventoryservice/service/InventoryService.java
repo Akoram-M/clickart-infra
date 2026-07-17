@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,10 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class InventoryService {
     private final InventoryRepository inventoryRepository;
+    private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
-    public boolean checkProductIsInStock(String skuCode) {
-        return inventoryRepository.findBySkuCode(skuCode).map(inventory -> inventory.getQuantity() > 0).orElse(false);
-    }
 
     public List<Inventory> getInventoryList() {
         return inventoryRepository.findAll();
@@ -39,8 +38,11 @@ public class InventoryService {
     public void deductStock(String eventJson) {
         try {
             OrderPlacedEvent event = objectMapper.readValue(eventJson, OrderPlacedEvent.class);
-            log.info("Deducting inventory for Order: {}", event.getOrderNumber());
+            String orderNumber = event.getOrderNumber();
 
+            log.info("Deducting inventory for Order: {}", orderNumber);
+
+            Boolean allInStock = true;
             for (Map.Entry<String, Integer> entry : event.getSkuQuantities().entrySet()) {
                 String sku = entry.getKey();
                 Integer quantityToDeduct = entry.getValue();
@@ -48,15 +50,24 @@ public class InventoryService {
                 Inventory inventory = inventoryRepository.findBySkuCode(sku)
                         .orElseThrow(() -> new RuntimeException("SKU not found in inventory: " + sku));
 
-                int newQuantity = inventory.getQuantity() - quantityToDeduct;
-                if (newQuantity < 0) {
-                    log.error("CRITICAL: Negative stock reached for SKU {}. Manual intervention required.", sku);
-                    // In a full Saga pattern, we would throw an exception here and publish an OrderFailedEvent to rollback the order.
+                if (inventory.getQuantity() < quantityToDeduct) {
+                    allInStock = false;
+                    log.warn("Insufficient stock for SKU: {}. Required: {}, Available: {}",
+                            entry.getKey(), entry.getValue(), inventory.getQuantity());
+                    break; // Fail the entire order
                 }
-
-                inventory.setQuantity(newQuantity);
-                inventoryRepository.save(inventory);
-                log.info("Deducted {} units of {}. Remaining stock: {}", quantityToDeduct, sku, newQuantity);
+            }
+            if (allInStock) {
+                for (Map.Entry<String, Integer> entry : event.getSkuQuantities().entrySet()) {
+                    Inventory inventory = inventoryRepository.findBySkuCode(entry.getKey()).get();
+                    inventory.setQuantity(inventory.getQuantity() - entry.getValue());
+                    inventoryRepository.save(inventory);
+                }
+                log.info("Inventory deducted. Approving order {}", orderNumber);
+                kafkaTemplate.send("inventory-success-topic", orderNumber);
+            } else {
+                log.error("Order {} failed inventory check. Rejecting.", orderNumber);
+                kafkaTemplate.send("inventory-failed-topic", orderNumber);
             }
         } catch (Exception e) {
             log.error("Failed to process inventory deduction event", e);
