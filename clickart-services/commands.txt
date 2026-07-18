@@ -194,3 +194,23 @@ kubectl describe pod -l app=kafka -n clickart | grep Image:
 
 12.Execute this exact command to extract the logs from the last crashed instance:
 kubectl logs deployment/discovery-server -n clickart --previous
+
+13.Execute this exact port-forwarding command to bridge your Mac's port 8081 to Keycloak's internal port 8080:
+
+API Gateway (The Entry Point):
+kubectl port-forward svc/clickart-api-gateway 8083:8083 -n clickart
+
+Keycloak (The Identity Provider):
+kubectl port-forward svc/clickart-keycloak-1 8081:8080 -n clickart
+
+Zipkin (Distributed Tracing):   
+kubectl port-forward svc/clickart-zipkin 9411:9411 -n clickart
+
+Eureka (Service Registry):
+kubectl port-forward svc/clickart-discovery-server 8761:8761 -n clickart
+
+14.Restart api-gateway 
+kubectl delete pod -l app=api-gateway -n clickart
+
+15.check logs
+kubectl logs -l app=api-gateway -n clickart -f

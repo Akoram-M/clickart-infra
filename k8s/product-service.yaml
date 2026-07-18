@@ -22,6 +22,8 @@ spec:
           value: "docker"
         - name: CONFIG_SERVER_URL
           value: "http://clickart-config-server:8888"
+        - name: SPRING_DATA_MONGODB_URI
+          value: "mongodb://test:test@clickart-mongodb-1:27017/product_db?authSource=admin"
         ports:
         - containerPort: 8080
 ---

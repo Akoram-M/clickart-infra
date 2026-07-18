@@ -22,6 +22,8 @@ spec:
           value: "docker"
         - name: CONFIG_SERVER_URL
           value: "http://clickart-config-server:8888"
+        - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY
+          value: "DEBUG"
         ports:
         - containerPort: 8083
 ---
@@ -31,10 +33,11 @@ metadata:
   name: clickart-api-gateway
   namespace: clickart
 spec:
-  type: LoadBalancer # CRITICAL: Exposes the gateway to your local machine
+  # type: LoadBalancer # CRITICAL: Exposes the gateway to your local machine
   selector:
     app: api-gateway
   ports:
     - protocol: TCP
       port: 8083
       targetPort: 8083
+      nodePort: 30083
