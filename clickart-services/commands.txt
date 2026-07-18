@@ -153,3 +153,39 @@ Go to Dashboards -> Import -> Enter ID 4701 (JVM Micrometer Dashboard) -> Select
 Redis
 *********
 1.docker exec -it clickart-redis-1 redis-cli
+
+
+*************
+k8s
+**********
+1.Run this command to expose your current configuration state and list all known clusters:
+kubectl config get-contexts
+
+2.Run this command to switch the active context:
+kubectl config use-context docker-desktop
+
+3.Verify the connection successfully hits the API server:
+kubectl get nodes
+
+4.Apply the namespace:
+kubectl apply -f k8s/namespace.yaml
+
+5.Apply the Redis deployment:
+kubectl apply -f k8s/redis.yaml
+
+6.Verify the Pod is running and physically allocating memory:
+kubectl get pods -n clickart
+
+7.Apply the PostgreSQL manifest:
+kubectl apply -f k8s/postgres.yaml
+
+8.Apply the Kafka manifest:
+kubectl apply -f k8s/kafka.yaml
+
+9.Watch the cluster actively provision the containers. 
+Run this command until all three pods (Redis, Postgres, Kafka) show a status of Running:
+kubectl get pods -n clickart -w
+
+10.To clean up the stuck pods instantly, forcefully delete the deployment and let Kubernetes recreate it from scratch:
+kubectl delete deployment kafka -n clickart
+kubectl apply -f k8s/kafka.yaml
