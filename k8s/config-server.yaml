@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: config-server
+  namespace: clickart
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: config-server
+  template:
+    metadata:
+      labels:
+        app: config-server
+    spec:
+      containers:
+      - name: config-server
+        image: clickart/config-server:1.0
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "docker"
+        - name: SPRING_CLOUD_CONFIG_SERVER_GIT_URI
+          value: "https://github.com/Akoram-M/clickart-config-repository.git"
+        - name: SPRING_CLOUD_CONFIG_SERVER_GIT_USERNAME
+          value: "Akoram-M"
+        - name: SPRING_CLOUD_CONFIG_SERVER_GIT_PASSWORD
+          value: "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" 
+        - name: SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL
+          value: "main"
+        ports:
+        - containerPort: 8888
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clickart-config-server
+  namespace: clickart
+spec:
+  selector:
+    app: config-server
+  ports:
+    - protocol: TCP
+      port: 8888
+      targetPort: 8888

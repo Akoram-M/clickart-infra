@@ -13,6 +13,10 @@ spec:
       labels:
         app: postgres
     spec:
+      volumes:
+      - name: init-db-script
+        configMap:
+          name: postgres-init-script
       containers:
       - name: postgres
         image: postgres:15
@@ -25,11 +29,13 @@ spec:
           value: orders_db
         ports:
         - containerPort: 5432
+        volumeMounts:
+        - name: init-db-script
+          mountPath: /docker-entrypoint-initdb.d
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  # CRITICAL: This exact name acts as the DNS resolution inside the cluster
   name: clickart-postgres-1
   namespace: clickart
 spec:

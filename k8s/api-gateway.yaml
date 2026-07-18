@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: clickart
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+      - name: api-gateway
+        image: clickart/api-gateway:1.0
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "docker"
+        - name: CONFIG_SERVER_URL
+          value: "http://clickart-config-server:8888"
+        ports:
+        - containerPort: 8083
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clickart-api-gateway
+  namespace: clickart
+spec:
+  type: LoadBalancer # CRITICAL: Exposes the gateway to your local machine
+  selector:
+    app: api-gateway
+  ports:
+    - protocol: TCP
+      port: 8083
+      targetPort: 8083

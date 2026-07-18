@@ -188,4 +188,9 @@ kubectl get pods -n clickart -w
 
 10.To clean up the stuck pods instantly, forcefully delete the deployment and let Kubernetes recreate it from scratch:
 kubectl delete deployment kafka -n clickart
-kubectl apply -f k8s/kafka.yaml
+
+11.Verify the configuration actually changed:
+kubectl describe pod -l app=kafka -n clickart | grep Image:
+
+12.Execute this exact command to extract the logs from the last crashed instance:
+kubectl logs deployment/discovery-server -n clickart --previous

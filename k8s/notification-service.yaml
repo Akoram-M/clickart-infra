@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: clickart
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+      - name: notification-service
+        image: clickart/notification-service:1.0
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: "docker"
+        - name: CONFIG_SERVER_URL
+          value: "http://clickart-config-server:8888"
+        # Port omitted as this is a background Kafka consumer, but standard Spring Boot port applies if web is enabled
