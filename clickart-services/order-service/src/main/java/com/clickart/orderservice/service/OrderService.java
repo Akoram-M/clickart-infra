@@ -1,6 +1,7 @@
 package com.clickart.orderservice.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -31,7 +32,7 @@ public class OrderService {
 
     @Transactional
     public String placeOrder(Order order) {
-        log.info("OrderService : placeOrder : <-->");
+        log.info("OrderService : placeOrder : <--");
         // 1. Prepare the Order
         order.setOrderNumber(UUID.randomUUID().toString());
         order.setStatus("PENDING");
@@ -70,6 +71,13 @@ public class OrderService {
 
         log.info("OrderService : placeOrder : -->");
         return "Order Placed and is currently PENDING";
+    }
+
+    public List<Order> listPlacedOrders(String status) {
+        if(status != null && !status.isEmpty())
+            return orderRepository.findAllByStatus(status); 
+        else
+            return orderRepository.findAll();   
     }
 
 }
