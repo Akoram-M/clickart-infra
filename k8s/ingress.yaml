@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: clickart-ingress
+  namespace: clickart
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: clickart-api-gateway # Must exactly match your Gateway K8s Service name
+            port:
+              number: 8083

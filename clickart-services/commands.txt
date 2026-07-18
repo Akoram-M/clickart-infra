@@ -214,3 +214,41 @@ kubectl delete pod -l app=api-gateway -n clickart
 
 15.check logs
 kubectl logs -l app=api-gateway -n clickart -f
+
+
+Step 1: Install an NGINX Ingress Controller
+1.Install Helm
+brew install helm
+
+2.Add the NGINX Ingress Repository:
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+
+3.Install the Controller:
+helm install ingress-nginx ingress-nginx/ingress-nginx \
+  --namespace ingress-nginx \
+  --create-namespace \
+  --set controller.service.type=LoadBalancer
+
+4.Verification
+kubectl get pods -n ingress-nginx -w
+
+5.Confirm that Docker Desktop has successfully bound the ports to your Mac:
+kubectl get svc ingress-nginx-controller -n ingress-nginx
+
+Step 2: Deploying the Kube-Prometheus-Stack.
+
+1.Add the Prometheus Community Repository:
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+2.Deploy the Stack:
+helm install monitoring prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --create-namespace
+
+3.Monitor the Initialization:
+kubectl get pods -n monitoring -w
+
+4.verification : Expose Grafana:
+kubectl port-forward svc/monitoring-grafana 8080:80 -n monitoring
