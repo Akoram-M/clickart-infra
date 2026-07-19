@@ -3,6 +3,9 @@ kind: Deployment
 metadata:
   name: notification-service
   namespace: clickart
+  labels:
+    app: notification-service
+    metrics: enabled      # 1. ADDED: Label for the ServiceMonitor to find
 spec:
   replicas: 1
   selector:

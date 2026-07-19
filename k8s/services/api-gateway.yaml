@@ -32,11 +32,14 @@ kind: Service
 metadata:
   name: clickart-api-gateway
   namespace: clickart
+  labels:
+    app: api-gateway
+    metrics: enabled      # 1. ADDED: Label for the ServiceMonitor to find
 spec:
-  # type: LoadBalancer # CRITICAL: Exposes the gateway to your local machine
   selector:
     app: api-gateway
   ports:
-    - protocol: TCP
+    - name: http          # 2. ADDED: Port name for the ServiceMonitor to bind to
+      protocol: TCP
       port: 8083
       targetPort: 8083

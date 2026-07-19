@@ -316,3 +316,20 @@ Eureka,               kubectl port-forward svc/clickart-discovery-server 8761:87
 4.Fetch Grafana password 
 kubectl get secret monitoring-grafana -n monitoring -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
 
+5.Reclaim Your Mac's Disk Space
+docker system prune -a --volumes -f
+
+5.describe yaml file
+kubectl explain configmap
+
+6.Step A: Download the raw JSON payload
+curl -s https://grafana.com/api/dashboards/4701/revisions/1/download > jvm-dashboard.json
+
+7.Wrap the JSON inside a ConfigMap and push it to the cluster
+kubectl create configmap jvm-micrometer-dashboard --from-file=jvm-micrometer.json=jvm-dashboard.json -n monitoring
+
+8.Step C: Apply the trigger label so the Sidecar detects it
+kubectl label configmap jvm-micrometer-dashboard grafana_dashboard="1" -n monitoring
+
+8.Step D: Cleanup the local file
+rm jvm-dashboard.json

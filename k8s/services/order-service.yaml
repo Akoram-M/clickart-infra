@@ -30,10 +30,14 @@ kind: Service
 metadata:
   name: clickart-order-service
   namespace: clickart
+  labels:
+    app: order-service    # 1. ADDED: Label for the ServiceMonitor to find
+    metrics: enabled
 spec:
   selector:
     app: order-service
   ports:
-    - protocol: TCP
+    - name: http          # 2. ADDED: Port name for the ServiceMonitor to bind to
+      protocol: TCP
       port: 8082
       targetPort: 8082

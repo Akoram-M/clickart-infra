@@ -30,10 +30,14 @@ kind: Service
 metadata:
   name: clickart-inventory-service
   namespace: clickart
+  labels:
+    app: inventory-service
+    metrics: enabled # 1. ADDED: Label for the ServiceMonitor to find
 spec:
   selector:
     app: inventory-service
   ports:
-    - protocol: TCP
+    - name: http          # 2. ADDED: Port name for the ServiceMonitor to bind to
+      protocol: TCP
       port: 8084
       targetPort: 8084

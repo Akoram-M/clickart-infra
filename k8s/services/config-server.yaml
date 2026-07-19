@@ -36,10 +36,14 @@ kind: Service
 metadata:
   name: clickart-config-server
   namespace: clickart
+  labels:
+    app: config-server
+    metrics: enabled
 spec:
   selector:
     app: config-server
   ports:
-    - protocol: TCP
+    - name: http          # 2. ADDED: Port name for the ServiceMonitor to bind to
+      protocol: TCP
       port: 8888
       targetPort: 8888

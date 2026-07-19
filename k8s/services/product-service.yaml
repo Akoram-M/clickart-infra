@@ -32,10 +32,14 @@ kind: Service
 metadata:
   name: clickart-product-service
   namespace: clickart
+  labels:
+    app: product-service
+    metrics: enabled      # 1. ADDED: Label for the ServiceMonitor to find
 spec:
   selector:
     app: product-service
   ports:
-    - protocol: TCP
+    - name: http          # 2. ADDED: Port name for the ServiceMonitor to bind to
+      protocol: TCP
       port: 8080
       targetPort: 8080
