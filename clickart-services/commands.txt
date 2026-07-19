@@ -182,6 +182,9 @@ kubectl apply -f k8s/postgres.yaml
 8.Apply the Kafka manifest:
 kubectl apply -f k8s/kafka.yaml
 
+## single commadn to apply all
+kubectl apply -f k8s/namespace.yaml && kubectl apply -f k8s/infra/ -n clickart && sleep 20 && kubectl apply -f k8s/services/ -n clickart && kubectl apply -f k8s/ingress.yaml -n clickart
+
 9.Watch the cluster actively provision the containers. 
 Run this command until all three pods (Redis, Postgres, Kafka) show a status of Running:
 kubectl get pods -n clickart -w
@@ -236,6 +239,11 @@ kubectl get pods -n ingress-nginx -w
 5.Confirm that Docker Desktop has successfully bound the ports to your Mac:
 kubectl get svc ingress-nginx-controller -n ingress-nginx
 
+6. install loki
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+helm install loki grafana/loki-stack --namespace monitoring
+
 Step 2: Deploying the Kube-Prometheus-Stack.
 
 1.Add the Prometheus Community Repository:
@@ -252,3 +260,55 @@ kubectl get pods -n monitoring -w
 
 4.verification : Expose Grafana:
 kubectl port-forward svc/monitoring-grafana 8080:80 -n monitoring
+
+***********************
+RestartK8s Cluster
+***********************
+1.Recreate the Namespace:
+kubectl create namespace clickart
+
+2. Deploy the Infrastructure (Databases, Message Brokers, Auth):
+# Assuming you have these in a folder like k8s/infra/
+kubectl apply -f k8s/infra/postgres.yaml -n clickart
+kubectl apply -f k8s/infra/mongodb.yaml -n clickart
+kubectl apply -f k8s/infra/redis.yaml -n clickart
+kubectl apply -f k8s/infra/kafka.yaml -n clickart
+kubectl apply -f k8s/infra/keycloak.yaml -n clickart
+kubectl apply -f k8s/infra/zipkin.yaml -n clickart
+
+3. Deploy the Microservices:
+kubectl apply -f k8s/services/discovery-server.yaml -n clickart
+kubectl apply -f k8s/services/config-server.yaml -n clickart
+# Wait for Discovery and Config to be ready, then apply the rest:
+kubectl apply -f k8s/services/api-gateway.yaml -n clickart
+kubectl apply -f k8s/services/product-service.yaml -n clickart
+kubectl apply -f k8s/services/order-service.yaml -n clickart
+kubectl apply -f k8s/services/inventory-service.yaml -n clickart
+kubectl apply -f k8s/services/notification-service.yaml -n clickart
+
+4. Restore the Routing:
+kubectl apply -f k8s/ingress.yaml
+
+****************************************************
+Best Practices: Managing Local Disk Space Safely
+****************************************************
+1. The Safe Purge (Run this weekly)
+docker system prune -f
+
+2. The Deep Clean (Run this monthly)
+docker image prune -a -f
+
+3. Control Persistent Volume Bloat
+Kafka: Edit your Kafka YAML configuration
+KAFKA_LOG_RETENTION_HOURS: 24
+
+Prometheus: Time-series databases consume
+helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --set prometheus.prometheusSpec.retention=1d
+
+Target Component,     Command,                                                                  Purpose
+Keycloak,             kubectl port-forward svc/clickart-keycloak-1 8081:8080 -n clickart        "To create new users, manage roles, or export realm settings via the browser."
+Grafana,              kubectl port-forward svc/monitoring-grafana 8080:80 -n monitoring         "To view JVM metrics, cluster health, and Prometheus dashboards."
+Zipkin,               kubectl port-forward svc/clickart-zipkin 9411:9411 -n clickart            "To visualize distributed tracing and debug latency bottlenecks.
+Eureka,               kubectl port-forward svc/clickart-discovery-server 8761:8761 -n clickart  "To manually verify which microservices are registered and healthy.

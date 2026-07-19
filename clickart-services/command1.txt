@@ -1,0 +1,63 @@
+======================================================
+MASTER RUNBOOK: CLICKART MICROSERVICES (KUBERNETES)
+======================================================
+
+--- PHASE 1: BUILD (Run when Java code changes) ---
+cd clickart-services
+mvn clean package -DskipTests
+
+docker build -t clickart/config-server:1.0 ./config-server
+docker build -t clickart/discovery-server:1.0 ./discovery-server
+docker build -t clickart/api-gateway:1.0 ./api-gateway
+docker build -t clickart/product-service:1.0 ./product-service
+docker build -t clickart/inventory-service:1.0 ./inventory-service
+docker build -t clickart/order-service:1.0 ./order-service
+docker build -t clickart/notification-service:1.0 ./notification-service
+
+--- PHASE 2: DEPLOY (Run to start the cluster) ---
+kubectl config use-context docker-desktop
+kubectl create namespace clickart
+
+# 1. Stateful Infrastructure
+kubectl apply -f k8s/infra/ -n clickart
+# WAIT for infrastructure pods to be 1/1 Running before proceeding.
+
+# 2. Core Routing
+kubectl apply -f k8s/services/discovery-server.yaml -n clickart
+kubectl apply -f k8s/services/config-server.yaml -n clickart
+# WAIT 30 seconds for Eureka to start.
+
+# 3. Microservices
+kubectl apply -f k8s/services/api-gateway.yaml -n clickart
+kubectl apply -f k8s/services/product-service.yaml -n clickart
+kubectl apply -f k8s/services/order-service.yaml -n clickart
+kubectl apply -f k8s/services/inventory-service.yaml -n clickart
+kubectl apply -f k8s/services/notification-service.yaml -n clickart
+kubectl apply -f k8s/ingress.yaml
+
+--- PHASE 3: DEBUG & OPERATE ---
+# View all running resources
+kubectl get pods -n clickart
+kubectl get svc -n clickart
+
+# Stream logs (Replace 'api-gateway' with desired service)
+kubectl logs -l app=api-gateway -n clickart -f
+
+# Force restart a service (e.g., after a config change)
+kubectl rollout restart deployment api-gateway -n clickart
+
+# Connect to databases internally
+kubectl exec -it deployment/postgres -n clickart -- psql -U test -d orders_db
+kubectl exec -it deployment/mongodb -n clickart -- mongosh -u test -p test --authenticationDatabase admin
+
+# Admin UI Port-Forwards (Keep these running in separate terminals when needed)
+kubectl port-forward svc/clickart-keycloak-1 8081:8080 -n clickart
+kubectl port-forward svc/clickart-zipkin 9411:9411 -n clickart
+
+--- PHASE 4: TEARDOWN & CLEANUP ---
+# Destroy the entire Kubernetes environment
+kubectl delete namespace clickart
+
+# Reclaim Mac disk space (Run monthly)
+docker system prune -f
+docker image prune -a -f
