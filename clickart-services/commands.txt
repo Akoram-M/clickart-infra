@@ -312,3 +312,7 @@ Keycloak,             kubectl port-forward svc/clickart-keycloak-1 8081:8080 -n 
 Grafana,              kubectl port-forward svc/monitoring-grafana 8080:80 -n monitoring         "To view JVM metrics, cluster health, and Prometheus dashboards."
 Zipkin,               kubectl port-forward svc/clickart-zipkin 9411:9411 -n clickart            "To visualize distributed tracing and debug latency bottlenecks.
 Eureka,               kubectl port-forward svc/clickart-discovery-server 8761:8761 -n clickart  "To manually verify which microservices are registered and healthy.
+
+4.Fetch Grafana password 
+kubectl get secret monitoring-grafana -n monitoring -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+

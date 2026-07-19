@@ -7,11 +7,20 @@ spec:
   ingressClassName: nginx
   rules:
   - http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: clickart-api-gateway # Must exactly match your Gateway K8s Service name
-            port:
-              number: 8083
+        paths:
+        # Rule 1: Route Keycloak Auth Traffic
+        - path: /realms
+          pathType: Prefix
+          backend:
+            service:
+              name: clickart-keycloak-1
+              port:
+                number: 8080
+        # Rule 2: Route Application API Traffic
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: clickart-api-gateway
+              port:
+                number: 8083
