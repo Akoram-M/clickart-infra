@@ -24,6 +24,15 @@ spec:
           value: test
         ports:
         - containerPort: 8080
+        # 1. MOUNT THE DIRECTORY INTO THE CONTAINER
+        volumeMounts:
+        - name: realm-config-volume
+          mountPath: /opt/keycloak/data/import
+      # 2. DEFINE THE CONFIGMAP AS A VOLUME
+      volumes:
+      - name: realm-config-volume
+        configMap:
+          name: keycloak-realm-config
 ---
 apiVersion: v1
 kind: Service
