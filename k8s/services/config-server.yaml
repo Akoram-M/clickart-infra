@@ -25,7 +25,7 @@ spec:
         - name: SPRING_CLOUD_CONFIG_SERVER_GIT_USERNAME
           value: "Akoram-M"
         - name: SPRING_CLOUD_CONFIG_SERVER_GIT_PASSWORD
-          value: "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" 
+          value: "{cipher}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" 
         - name: SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL
           value: "main"
         ports:
