@@ -73,6 +73,7 @@ services:
       - ENCRYPT_KEY=clickart_master_secret_key_2026
       - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=https://github.com/Akoram-M/clickart-config-repository.git
       - SPRING_CLOUD_CONFIG_SERVER_GIT_USERNAME=Akoram-M
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://clickart-zipkin:9411/api/v2/spans
       # TEMPORARY DUMMY PASSWORD TO BREAK THE BOOT LOOP
       - SPRING_CLOUD_CONFIG_SERVER_GIT_PASSWORD={cipher}2d5754213edf05d893efa0a20ed2b45d93723703e10c894ea4c8da3e43b57ba7daba1406d0c6eeead7abd247faf3eec56c024af1429daaf234a54cf3442b1087
       # CRITICAL: Forces Config Server to check 'main' instead of 'master'
