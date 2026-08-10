@@ -73,7 +73,7 @@ services:
       # CRITICAL: Replace YOUR_GITHUB_USERNAME below!
       - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=https://github.com/Akoram-M/clickart-config-repository.git
       - SPRING_CLOUD_CONFIG_SERVER_GIT_USERNAME=Akoram-M
-      - SPRING_CLOUD_CONFIG_SERVER_GIT_PASSWORD=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
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_PASSWORD={cipher}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
       # CRITICAL: Forces Config Server to check 'main' instead of 'master'
       - SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL=main
     restart: on-failure
