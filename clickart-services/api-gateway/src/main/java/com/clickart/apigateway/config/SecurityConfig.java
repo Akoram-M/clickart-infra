@@ -17,13 +17,14 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
-@Bean
+    @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         http.csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(exchanges -> exchanges
-                        // CRITICAL: Swagger endpoints must be permitted
-                        .pathMatchers("/eureka/**", "/actuator/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                        .anyExchange().authenticated())
+                        // CRITICAL: Webjars must be permitted for the WebFlux UI redirect to work
+                        .pathMatchers("/eureka/**", "/actuator/**", "/v3/api-docs/**", "/swagger-ui/**",
+                                "/swagger-ui.html", "/webjars/**")
+                        .permitAll().anyExchange().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
         return http.build();
     }
