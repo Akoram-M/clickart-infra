@@ -136,9 +136,11 @@ docker exec clickart-postgres-1 psql -U test -d orders_db -c "CREATE DATABASE in
 docker exec clickart-postgres-1 psql -U test -d orders_db -c "CREATE DATABASE keycloak_db;"
 
 Step 5: The Boot Sequence
-Tear down the old network: docker compose down -v
+Tear down the old network: 
+docker compose down -v
 
-Boot the new network: docker compose up -d
+Boot the new network: 
+docker compose up -d
 
 Verify Prometheus is scraping your JVMs by navigating to http://localhost:9090/targets. All targets must now show as UP.
 
