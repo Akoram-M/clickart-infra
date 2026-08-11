@@ -106,13 +106,13 @@ Phase 2: The Containerization Pipeline (Docker Daemon)
 
 cd /Users/akorammohandoss/workspace/backend/Clickart/clickart-services
 
-cd config-server && docker build -t clickart/config-server:1.0 . && cd ..
-cd discovery-server && docker build -t clickart/discovery-server:1.0 . && cd ..
-cd product-service && docker build -t clickart/product-service:1.0 . && cd ..
-cd inventory-service && docker build -t clickart/inventory-service:1.0 . && cd ..
-cd order-service && docker build -t clickart/order-service:1.0 . && cd ..
-cd notification-service && docker build -t clickart/notification-service:1.0 . && cd ..
-cd api-gateway && docker build -t clickart/api-gateway:1.0 . && cd ..
+cd config-server && docker build --no-cache -t clickart/config-server:1.0 . && cd ..
+cd discovery-server && docker build --no-cache -t clickart/discovery-server:1.0 . && cd ..
+cd product-service && docker build --no-cache -t clickart/product-service:1.0 . && cd ..
+cd inventory-service && docker build --no-cache -t clickart/inventory-service:1.0 . && cd ..
+cd order-service && docker build --no-cache -t clickart/order-service:1.0 . && cd ..
+cd notification-service && docker build --no-cache -t clickart/notification-service:1.0 . && cd ..
+cd api-gateway && docker build --no-cache -t clickart/api-gateway:1.0 . && cd ..
 
 Phase 3: The Orchestration Pipeline (Docker Compose)
 
@@ -140,7 +140,7 @@ Tear down the old network:
 docker compose down -v
 
 Boot the new network: 
-docker compose up -d
+docker compose up -d --force-recreate
 
 Verify Prometheus is scraping your JVMs by navigating to http://localhost:9090/targets. All targets must now show as UP.
 

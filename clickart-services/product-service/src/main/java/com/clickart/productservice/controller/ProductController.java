@@ -1,5 +1,6 @@
 package com.clickart.productservice.controller;
 
+import com.clickart.productservice.config.OpenApiConfig;
 import com.clickart.productservice.model.Product;
 import com.clickart.productservice.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
