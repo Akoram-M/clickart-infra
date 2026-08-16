@@ -10,11 +10,11 @@ services:
     environment:
       POSTGRES_USER: test
       POSTGRES_PASSWORD: test
-      POSTGRES_DB: orders_db
     ports:
       - "5434:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d # CRITICAL: Mount your init scripts
 
   mongodb:
     image: mongo:7.0
@@ -37,6 +37,8 @@ services:
       KEYCLOAK_ADMIN_PASSWORD: test
     ports:
       - "8081:8080"
+    volumes:
+      - keycloak-data:/opt/keycloak/data
 
   kafka:
     image: apache/kafka:3.7.0
@@ -85,11 +87,18 @@ services:
     container_name: clickart-discovery-server
     ports:
       - "8761:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8761/eureka/apps || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - CONFIG_SERVER_URL=http://clickart-config-server:8888
     depends_on:
-      - config-server
+      config-server:
+        condition: service_started
     restart: on-failure
 
   # ==========================================
@@ -104,9 +113,12 @@ services:
       - SPRING_DATA_MONGODB_URI=mongodb://test:test@clickart-mongodb-1:27017/product_db?authSource=admin
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://clickart-discovery-server:8761/eureka/
     depends_on:
-      - mongodb
-      - config-server
-      - discovery-server
+      mongodb:
+        condition: service_started
+      config-server:
+        condition: service_started
+      discovery-server:
+        condition: service_healthy
     restart: on-failure
 
   inventory-service:
@@ -121,9 +133,12 @@ services:
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=clickart-kafka-1:29092
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://clickart-discovery-server:8761/eureka/
     depends_on:
-      - postgres
-      - config-server
-      - discovery-server
+      postgres:
+        condition: service_started
+      config-server:
+        condition: service_started
+      discovery-server:
+        condition: service_healthy
     restart: on-failure
     
   order-service:
@@ -138,10 +153,14 @@ services:
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=clickart-kafka-1:29092
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://clickart-discovery-server:8761/eureka/
     depends_on:
-      - postgres
-      - kafka
-      - config-server
-      - discovery-server
+      postgres:
+        condition: service_started
+      kafka:
+        condition: service_started
+      config-server:
+        condition: service_started
+      discovery-server:
+        condition: service_healthy
     restart: on-failure
 
   notification-service:
@@ -153,9 +172,12 @@ services:
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=clickart-kafka-1:29092
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://clickart-discovery-server:8761/eureka/
     depends_on:
-      - kafka
-      - config-server
-      - discovery-server
+      kafka:
+        condition: service_started
+      config-server:
+        condition: service_started
+      discovery-server:
+        condition: service_healthy
     restart: on-failure
 
   # ==========================================
@@ -172,12 +194,20 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://clickart-discovery-server:8761/eureka/
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI=http://clickart-keycloak-1:8080/realms/clickart-realm/protocol/openid-connect/certs
     depends_on:
-      - keycloak
-      - config-server
-      - discovery-server
-      - product-service
-      - order-service
-      - inventory-service
+      redis:
+        condition: service_started
+      keycloak:
+        condition: service_started
+      config-server:
+        condition: service_started
+      discovery-server:
+        condition: service_healthy
+      product-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
     restart: on-failure
 # ==========================================
   # PHASE 5: THE OBSERVABILITY MATRIX
@@ -230,3 +260,4 @@ volumes:
   postgres-data:
   mongo-data:
   redis_data:
+  keycloak-data:
