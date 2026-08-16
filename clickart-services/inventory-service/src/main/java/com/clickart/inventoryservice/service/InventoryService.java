@@ -14,8 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.clickart.inventoryservice.dto.InventoryFailedEvent;
 import com.clickart.inventoryservice.dto.OrderPlacedEvent;
 import com.clickart.inventoryservice.model.Inventory;
+import com.clickart.inventoryservice.model.OutboxEvent;
 import com.clickart.inventoryservice.model.ProcessedEvent;
 import com.clickart.inventoryservice.repository.InventoryRepository;
+import com.clickart.inventoryservice.repository.OutboxRepository;
 import com.clickart.inventoryservice.repository.ProcessedEventRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,7 +33,7 @@ public class InventoryService {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
     private final ProcessedEventRepository processedEventRepository;
-
+    private final OutboxRepository outboxRepository;
     public List<Inventory> getInventoryList() {
         return inventoryRepository.findAll();
     }
@@ -83,47 +85,34 @@ public class InventoryService {
     }
 
     @KafkaListener(topics = "order-placed-topic", groupId = "inventory-group")
-    @Transactional // Critical: Stock deduction and idempotency tracking must commit together
-    public void processInventory(
+    @Transactional
+    public void handleOrderPlaced(
             @Payload OrderPlacedEvent event,
             @Header("eventId") String eventId) {
 
-        // DEFENSE: Check if already processed (Idempotency)
+        // 1. Idempotency Check
         if (processedEventRepository.existsById(eventId)) {
-            System.out.println("Duplicate event detected. Dropping eventId: " + eventId);
             return;
         }
 
-        // STEP 1: Verify stock for ALL items before deducting anything
-        for (Map.Entry<String, Integer> entry : event.getSkuQuantities().entrySet()) {
-            String sku = entry.getKey();
-            Integer requestedQuantity = entry.getValue();
-
-            // Assuming your repository has a method to check if stock >= requestedQuantity
-            boolean hasEnoughStock = inventoryRepository.hasSufficientStock(sku, requestedQuantity);
-
-            if (!hasEnoughStock) {
-                // Serialize Object to JSON String
-                try {
-                    // FAIL FAST: Emit Saga compensation event and abort
-                    InventoryFailedEvent failureEvent = new InventoryFailedEvent(event.getOrderNumber(),
-                            "OUT_OF_STOCK");
-                    String jsonPayload = objectMapper.writeValueAsString(failureEvent);
-                    kafkaTemplate.send("inventory-failed-topic", jsonPayload);
-                    return;
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException("Failed to serialize Saga compensation event", e);
-                }
-            }
-        }
-
-        // STEP 2: All items are in stock. Execute physical deductions.
+        // 2. Validate and Deduct Stock
         for (Map.Entry<String, Integer> entry : event.getSkuQuantities().entrySet()) {
             inventoryRepository.deductStock(entry.getKey(), entry.getValue());
         }
 
-        // STEP 3: Record the Event ID to prevent future duplicate processing
+        // 3. Save Outbox Event (Guaranteed atomicity with database commit)
+        try {
+            InventoryFailedEvent failureEvent = new InventoryFailedEvent(event.getOrderNumber(), "SUCCESS");
+            String jsonPayload = objectMapper.writeValueAsString(failureEvent);
+
+            OutboxEvent outbox = new OutboxEvent(null, event.getOrderNumber(), "InventoryProcessed", jsonPayload,
+                    false);
+            outboxRepository.save(outbox);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Failed to serialize outbox payload", e);
+        }
+
+        // 4. Record Event ID
         processedEventRepository.save(new ProcessedEvent(eventId, LocalDateTime.now()));
     }
-
 }
