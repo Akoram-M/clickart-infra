@@ -23,9 +23,15 @@ spec:
         - name: SPRING_CLOUD_CONFIG_SERVER_GIT_URI
           value: "https://github.com/Akoram-M/clickart-config-repository.git"
         - name: SPRING_CLOUD_CONFIG_SERVER_GIT_USERNAME
-          value: "Akoram-M"
+          valueFrom:
+            secretKeyRef:
+              name: github-config-secret
+              key: GIT_USERNAME
         - name: SPRING_CLOUD_CONFIG_SERVER_GIT_PASSWORD
-          value: "{cipher}" 
+          valueFrom:
+            secretKeyRef:
+              name: github-config-secret
+              key: GIT_PASSWORD
         - name: SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL
           value: "main"
         ports:
@@ -43,7 +49,7 @@ spec:
   selector:
     app: config-server
   ports:
-    - name: http          # 2. ADDED: Port name for the ServiceMonitor to bind to
+    - name: http
       protocol: TCP
       port: 8888
       targetPort: 8888
