@@ -12,9 +12,22 @@ services:
       POSTGRES_PASSWORD: test
     ports:
       - "5434:5432"
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
+      - "-c"
+      - "max_wal_senders=4"
+      - "-c"
+      - "max_replication_slots=4"
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./postgres-init:/docker-entrypoint-initdb.d # CRITICAL: Mount your init scripts
+      - ./postgres-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   mongodb:
     image: mongo:7.0
@@ -55,13 +68,48 @@ services:
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   redis:
     image: redis:7.0-alpine
     container_name: clickart-redis-1
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data #
+      - redis_data:/data
+
+  # ==========================================
+  # CDC ENGINE (DEBEZIUM KAFKA CONNECT)
+  # ==========================================
+  kafka-connect:
+    image: debezium/connect:2.5
+    container_name: clickart-debezium
+    ports:
+      - "8084:8083" # Mapped to 8084 to prevent conflict with api-gateway on 8083
+    environment:
+      BOOTSTRAP_SERVERS: clickart-kafka-1:29092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: debezium_connect_configs
+      OFFSET_STORAGE_TOPIC: debezium_connect_offsets
+      STATUS_STORAGE_TOPIC: debezium_connect_statuses
+      CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_REPLICATION_FACTOR: 1
+      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      KEY_CONVERTER_SCHEMAS_ENABLE: "false"
+      VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+
   # ==========================================
   # PHASE 2: CONFIGURATION & DISCOVERY
   # ==========================================
@@ -76,9 +124,7 @@ services:
       - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=https://github.com/Akoram-M/clickart-config-repository.git
       - SPRING_CLOUD_CONFIG_SERVER_GIT_USERNAME=Akoram-M
       - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://clickart-zipkin:9411/api/v2/spans
-      # TEMPORARY DUMMY PASSWORD TO BREAK THE BOOT LOOP
       - SPRING_CLOUD_CONFIG_SERVER_GIT_PASSWORD={cipher}2d5754213edf05d893efa0a20ed2b45d93723703e10c894ea4c8da3e43b57ba7daba1406d0c6eeead7abd247faf3eec56c024af1429daaf234a54cf3442b1087
-      # CRITICAL: Forces Config Server to check 'main' instead of 'master'
       - SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL=main
     restart: on-failure
 
@@ -134,7 +180,7 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://clickart-discovery-server:8761/eureka/
     depends_on:
       postgres:
-        condition: service_started
+        condition: service_healthy
       config-server:
         condition: service_started
       discovery-server:
@@ -154,9 +200,9 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://clickart-discovery-server:8761/eureka/
     depends_on:
       postgres:
-        condition: service_started
+        condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
       config-server:
         condition: service_started
       discovery-server:
@@ -173,7 +219,7 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://clickart-discovery-server:8761/eureka/
     depends_on:
       kafka:
-        condition: service_started
+        condition: service_healthy
       config-server:
         condition: service_started
       discovery-server:
@@ -209,7 +255,8 @@ services:
       inventory-service:
         condition: service_started
     restart: on-failure
-# ==========================================
+
+  # ==========================================
   # PHASE 5: THE OBSERVABILITY MATRIX
   # ==========================================
   prometheus:
@@ -232,11 +279,13 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
       - prometheus
+
   zipkin:
     image: openzipkin/zipkin:latest
     container_name: clickart-zipkin
     ports:
       - "9411:9411"
+
   # ==========================================
   # PHASE 6: CENTRALIZED LOGGING
   # ==========================================
@@ -256,6 +305,7 @@ services:
     command: -config.file=/etc/promtail/config.yml
     depends_on:
       - loki
+
 volumes:
   postgres-data:
   mongo-data:
